@@ -1,132 +1,125 @@
 <template>
   <div class="portfolio">
-    <!-- 粒子背景 -->
-    <canvas ref="particleCanvas" class="particle-bg"></canvas>
+    <!-- WebGL 星空背景 -->
+    <canvas ref="starCanvas" class="star-bg"></canvas>
+
+    <!-- 加载动画 -->
+    <div class="loader" v-if="loading">
+      <div class="loader-ring"></div>
+      <span>Loading...</span>
+    </div>
 
     <!-- 导航 -->
-    <nav class="navbar" :class="{ 'navbar-scrolled': scrolled }">
-      <div class="nav-brand">ZH</div>
+    <nav class="navbar" :class="{ 'navbar-scrolled': scrolled, 'navbar-hidden': hiddenNav }">
+      <div class="nav-brand">
+        <span class="brand-text">宗辉</span>
+        <span class="brand-dot"></span>
+      </div>
       <div class="nav-links" :class="{ 'nav-open': navOpen }">
-        <a v-for="item in navItems" :key="item.id" @click="scrollTo(item.id); navOpen = false">
+        <a v-for="item in navItems" :key="item.id"
+           @click="scrollTo(item.id); navOpen = false"
+           :class="{ active: activeSection === item.id }">
           {{ item.name }}
         </a>
       </div>
-      <div class="nav-toggle" @click="navOpen = !navOpen">
+      <div class="nav-toggle" @click="navOpen = !navOpen" :class="{ active: navOpen }">
         <span></span>
         <span></span>
         <span></span>
       </div>
     </nav>
 
-    <!-- 英雄区域 -->
+    <!-- Hero 区域 - 3D 视差效果 -->
     <section id="hero" class="hero">
-      <div class="hero-content">
-        <div class="glitch-wrapper">
-          <h1 class="glitch" data-text="宗辉">宗辉</h1>
+      <div class="hero-3d-container">
+        <div class="floating-shapes">
+          <div class="shape shape-1"></div>
+          <div class="shape shape-2"></div>
+          <div class="shape shape-3"></div>
+          <div class="shape shape-4"></div>
         </div>
-        <div class="typing-text">
-          <span ref="typeText"></span>
-          <span class="cursor">|</span>
+      </div>
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="badge-pulse"></span>
+          <span>Available for hire</span>
+        </div>
+        <h1 class="hero-title">
+          <span class="title-line" v-for="(line, i) in titleLines" :key="i" :style="{ '--delay': i * 0.1 + 's' }">
+            {{ line }}
+          </span>
+        </h1>
+        <div class="hero-role">
+          <span class="role-prefix">I'm a</span>
+          <span class="role-text">{{ currentRole }}</span>
+          <span class="role-cursor">|</span>
         </div>
         <p class="hero-desc">
-          十年磨一剑，专注前端工程化与用户体验设计
+          十年前端开发经验，专注于创造极致用户体验。
+          从 iOS 原生到跨平台，从 Web 到移动端，全栈技术视野。
         </p>
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-glow" @click="scrollTo('projects')">
+            <span>查看作品</span>
+            <svg class="btn-icon" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+          </button>
+          <button class="btn btn-secondary" @click="scrollTo('contact')">
+            <span>联系我</span>
+          </button>
+        </div>
         <div class="hero-stats">
-          <div class="stat-item" v-for="(stat, index) in stats" :key="index">
-            <div class="stat-number" :data-target="stat.number">{{ stat.display }}</div>
+          <div class="stat-item" v-for="(stat, i) in stats" :key="i" :style="{ '--delay': i * 0.1 + 's' }">
+            <div class="stat-value">
+              <span class="stat-number" :data-target="stat.number">{{ stat.display }}</span>
+              <span class="stat-suffix">{{ stat.suffix }}</span>
+            </div>
             <div class="stat-label">{{ stat.label }}</div>
           </div>
         </div>
-        <div class="hero-buttons">
-          <button class="btn btn-primary" @click="scrollTo('skills')">
-            <span>查看技能</span>
-            <div class="btn-glow"></div>
-          </button>
-          <button class="btn btn-secondary" @click="scrollTo('contact')">
-            联系我
-          </button>
-        </div>
       </div>
-      <div class="scroll-indicator">
-        <div class="mouse"></div>
-        <span>向下滚动</span>
+      <div class="scroll-hint">
+        <div class="mouse">
+          <div class="wheel"></div>
+        </div>
+        <span>Scroll</span>
       </div>
     </section>
 
-    <!-- 关于我 -->
+    <!-- 关于我 - 时间线卡片 -->
     <section id="about" class="about">
       <div class="container">
-        <h2 class="section-title">
-          <span class="title-line"></span>
-          关于我
-          <span class="title-line"></span>
-        </h2>
-        <div class="about-content">
-          <div class="about-card">
-            <div class="card-shine"></div>
-            <div class="about-icon">💻</div>
-            <h3>前端专家</h3>
-            <p>深耕前端领域十年，见证并参与了前端技术的整个发展历程。从 jQuery 到 React、Vue，从 ES5 到 ES2024，始终保持技术敏感度。</p>
-          </div>
-          <div class="about-card">
-            <div class="card-shine"></div>
-            <div class="about-icon">🚀</div>
-            <h3>技术驱动</h3>
-            <p>热爱技术创新，擅长前端工程化建设。在多个项目中主导技术选型、架构设计，带领团队完成从 0 到 1 的构建。</p>
-          </div>
-          <div class="about-card">
-            <div class="card-shine"></div>
-            <div class="about-icon">🎨</div>
-            <h3>设计敏感</h3>
-            <p>对 UI/UX 有独到见解，能将设计稿完美还原。注重用户体验细节，追求代码与视觉的完美统一。</p>
-          </div>
+        <div class="section-header">
+          <span class="section-tag">About Me</span>
+          <h2 class="section-title">关于我</h2>
+          <p class="section-desc">技术为艺术服务，代码为体验而生</p>
         </div>
-      </div>
-    </section>
-
-    <!-- 技能展示 -->
-    <section id="skills" class="skills">
-      <div class="container">
-        <h2 class="section-title light">
-          <span class="title-line"></span>
-          技术栈
-          <span class="title-line"></span>
-        </h2>
-        <div class="skills-grid">
-          <div class="skill-category" v-for="(category, idx) in skillCategories" :key="idx">
-            <h3 class="category-title">{{ category.name }}</h3>
-            <div class="skill-items">
-              <div class="skill-item" v-for="(skill, sIdx) in category.skills" :key="sIdx"
-                   :style="{ '--delay': sIdx * 0.1 + 's' }">
-                <div class="skill-info">
-                  <span class="skill-name">{{ skill.name }}</span>
-                  <span class="skill-level">{{ skill.level }}%</span>
+        <div class="about-grid">
+          <div class="about-card main-card" ref="aboutCard">
+            <div class="card-glow"></div>
+            <div class="card-content">
+              <div class="avatar-wrapper">
+                <div class="avatar">
+                  <span>ZH</span>
                 </div>
-                <div class="skill-bar">
-                  <div class="skill-progress" :style="{ width: skill.level + '%' }"></div>
-                </div>
+                <div class="avatar-ring"></div>
+              </div>
+              <h3>宗辉</h3>
+              <p class="title">高级前端工程师</p>
+              <p class="bio">
+                热爱技术的创造者，专注于前端工程化与用户体验设计。
+                擅长 React、Vue、React Native 等技术栈，
+                有丰富的大型项目架构经验。
+              </p>
+              <div class="location">
+                <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+                <span>北京，中国</span>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 时间轴 -->
-    <section id="experience" class="experience">
-      <div class="container">
-        <h2 class="section-title">
-          <span class="title-line"></span>
-          十年历程
-          <span class="title-line"></span>
-        </h2>
-        <div class="timeline">
-          <div class="timeline-item" v-for="(item, index) in timeline" :key="index"
-               :class="{ 'timeline-right': index % 2 === 1 }">
-            <div class="timeline-dot"></div>
-            <div class="timeline-content">
-              <div class="timeline-year">{{ item.year }}</div>
-              <h3>{{ item.title }}</h3>
+          <div class="about-cards">
+            <div class="about-item" v-for="(item, i) in aboutItems" :key="i">
+              <div class="item-icon">{{ item.icon }}</div>
+              <h4>{{ item.title }}</h4>
               <p>{{ item.desc }}</p>
             </div>
           </div>
@@ -134,254 +127,541 @@
       </div>
     </section>
 
-    <!-- 联系方式 -->
-    <section id="contact" class="contact">
+    <!-- 技能展示 - 3D 卡片云 -->
+    <section id="skills" class="skills">
       <div class="container">
-        <h2 class="section-title light">
-          <span class="title-line"></span>
-          联系我
-          <span class="title-line"></span>
-        </h2>
-        <div class="contact-content">
-          <div class="contact-info">
-            <div class="contact-item" v-for="(contact, idx) in contacts" :key="idx" @click="handleContactClick(contact)">
-              <div class="contact-icon">{{ contact.icon }}</div>
-              <div class="contact-detail">
-                <h4>{{ contact.title }}</h4>
-                <p>{{ contact.value }}</p>
+        <div class="section-header light">
+          <span class="section-tag">Skills</span>
+          <h2 class="section-title">技术栈</h2>
+          <p class="section-desc">全栈技术视野，持续学习进化</p>
+        </div>
+        <div class="skills-visual">
+          <div class="skill-orbit">
+            <div class="skill-core">
+              <span>Frontend</span>
+            </div>
+            <div class="skill-satellites">
+              <div class="satellite" v-for="(skill, i) in orbitSkills" :key="i" :style="{ '--orbit': i, '--total': orbitSkills.length }">
+                <span>{{ skill }}</span>
               </div>
             </div>
           </div>
-          <div class="contact-cta">
-            <h3>有项目想法？</h3>
-            <p>无论是技术交流还是项目合作，都欢迎随时联系我</p>
-            <button class="btn btn-large btn-glow" @click="openEmailModal">
-              发送邮件
-            </button>
+        </div>
+        <div class="skills-detailed">
+          <div class="skill-category" v-for="(cat, i) in skillCategories" :key="i">
+            <h3 class="category-title">
+              <span class="cat-icon">{{ cat.icon }}</span>
+              {{ cat.name }}
+            </h3>
+            <div class="skill-list">
+              <div class="skill-bar-item" v-for="(skill, j) in cat.skills" :key="j">
+                <div class="skill-info">
+                  <span class="skill-name">{{ skill.name }}</span>
+                  <span class="skill-percent">{{ skill.level }}%</span>
+                </div>
+                <div class="skill-progress-bar">
+                  <div class="skill-fill" :style="{ width: skill.level + '%', '--level': skill.level }">
+                    <div class="skill-shine"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 邮件发送模态框 -->
-    <div class="email-modal" v-if="emailModal.show" @click.self="closeEmailModal">
-      <div class="email-modal-content">
-        <div class="email-modal-header">
-          <h3>发送邮件</h3>
-          <button class="modal-close" @click="closeEmailModal">&times;</button>
+    <!-- 项目展示 - 瀑布流画廊 -->
+    <section id="projects" class="projects">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Portfolio</span>
+          <h2 class="section-title">项目作品</h2>
+          <p class="section-desc">精选项目，展现技术实力</p>
         </div>
-        <div class="email-modal-body">
-          <form @submit.prevent="sendEmail">
-            <div class="form-group">
-              <label>收件人</label>
-              <input type="text" value="zonghui1006@163.com" disabled />
+        <div class="project-filters">
+          <button v-for="filter in projectFilters" :key="filter"
+                  :class="{ active: activeFilter === filter }"
+                  @click="activeFilter = filter">
+            {{ filter }}
+          </button>
+        </div>
+        <div class="projects-grid">
+          <div class="project-card" v-for="(project, i) in filteredProjects" :key="i"
+               :class="{ 'featured': project.featured }"
+               @mouseenter="project.hover = true"
+               @mouseleave="project.hover = false">
+            <div class="project-image">
+              <div class="project-placeholder" :style="{ background: project.gradient }">
+                <span class="project-icon">{{ project.icon }}</span>
+              </div>
+              <div class="project-overlay">
+                <div class="project-links">
+                  <a :href="project.demo" target="_blank" class="link-btn" v-if="project.demo">
+                    <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    预览
+                  </a>
+                  <a :href="project.code" target="_blank" class="link-btn" v-if="project.code">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z"/></svg>
+                    代码
+                  </a>
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label>您的姓名</label>
-              <input type="text" v-model="emailModal.name" placeholder="请输入您的姓名" required />
+            <div class="project-info">
+              <h3>{{ project.name }}</h3>
+              <p>{{ project.desc }}</p>
+              <div class="project-tags">
+                <span v-for="tag in project.tags" :key="tag">{{ tag }}</span>
+              </div>
             </div>
-            <div class="form-group">
-              <label>您的邮箱</label>
-              <input type="email" v-model="emailModal.email" placeholder="请输入您的邮箱" required />
-            </div>
-            <div class="form-group">
-              <label>主题</label>
-              <input type="text" v-model="emailModal.subject" placeholder="请输入邮件主题" required />
-            </div>
-            <div class="form-group">
-              <label>内容</label>
-              <textarea v-model="emailModal.message" rows="5" placeholder="请输入邮件内容" required></textarea>
-            </div>
-            <div class="form-actions">
-              <button type="button" class="btn btn-secondary" @click="closeEmailModal">取消</button>
-              <button type="submit" class="btn btn-primary" :disabled="emailModal.loading">
-                {{ emailModal.loading ? '发送中...' : '发送邮件' }}
-              </button>
-            </div>
-          </form>
-          <div class="email-tips" v-if="emailModal.tip">
-            <p>{{ emailModal.tip }}</p>
           </div>
         </div>
       </div>
-    </div>
+    </section>
+
+    <!-- 工作经历 - 时间轴 -->
+    <section id="experience" class="experience">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Experience</span>
+          <h2 class="section-title">工作经历</h2>
+          <p class="section-desc">十年技术沉淀，持续成长</p>
+        </div>
+        <div class="timeline-container">
+          <div class="timeline-line"></div>
+          <div class="timeline-items">
+            <div class="timeline-item" v-for="(item, i) in experiences" :key="i"
+                 :class="{ 'item-left': i % 2 === 0, 'item-right': i % 2 === 1 }">
+              <div class="timeline-dot">
+                <div class="dot-pulse"></div>
+              </div>
+              <div class="timeline-card">
+                <div class="card-period">{{ item.period }}</div>
+                <h3 class="card-title">{{ item.title }}</h3>
+                <p class="card-company">{{ item.company }}</p>
+                <p class="card-desc">{{ item.desc }}</p>
+                <div class="card-tags">
+                  <span v-for="tag in item.tags" :key="tag">{{ tag }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 联系区域 - 增强版 -->
+    <section id="contact" class="contact">
+      <div class="container">
+        <div class="section-header light">
+          <span class="section-tag">Contact</span>
+          <h2 class="section-title">联系我</h2>
+          <p class="section-desc">有项目想法？ let's talk</p>
+        </div>
+        <div class="contact-wrapper">
+          <div class="contact-info-cards">
+            <div class="info-card" v-for="(contact, i) in contactInfo" :key="i" @click="handleContact(contact)">
+              <div class="info-icon">{{ contact.icon }}</div>
+              <h4>{{ contact.title }}</h4>
+              <p>{{ contact.value }}</p>
+              <div class="info-arrow">→</div>
+            </div>
+          </div>
+          <div class="contact-form-wrapper">
+            <form class="contact-form" @submit.prevent="submitForm">
+              <div class="form-row">
+                <div class="form-group">
+                  <input type="text" v-model="form.name" required placeholder=" " />
+                  <label>您的姓名</label>
+                </div>
+                <div class="form-group">
+                  <input type="email" v-model="form.email" required placeholder=" " />
+                  <label>您的邮箱</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <input type="text" v-model="form.subject" required placeholder=" " />
+                <label>主题</label>
+              </div>
+              <div class="form-group">
+                <textarea v-model="form.message" rows="5" required placeholder=" "></textarea>
+                <label>内容</label>
+              </div>
+              <button type="submit" class="btn btn-submit" :disabled="form.submitting">
+                <span>{{ form.submitting ? '发送中...' : '发送消息' }}</span>
+                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- 页脚 -->
     <footer class="footer">
-      <p>&copy; 2024 宗辉. All Rights Reserved. | 用 ❤️ 和代码构建</p>
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-brand">
+            <span>宗辉</span>
+            <p>用代码创造价值</p>
+          </div>
+          <div class="footer-links">
+            <a v-for="link in footerLinks" :key="link.name" @click="scrollTo(link.id)">{{ link.name }}</a>
+          </div>
+          <div class="footer-social">
+            <a v-for="social in socials" :key="social.name" :href="social.url" target="_blank">
+              {{ social.icon }}
+            </a>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy; {{ currentYear }} 宗辉. All Rights Reserved.</p>
+          <p>Made with ❤️ and Vue.js</p>
+        </div>
+      </div>
     </footer>
+
+    <!-- Toast 提示 -->
+    <div class="toast" :class="{ show: toast.show, success: toast.type === 'success', error: toast.type === 'error' }">
+      {{ toast.message }}
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed, reactive } from 'vue';
 
 export default {
   name: 'App',
   setup() {
-    const particleCanvas = ref(null);
-    const typeText = ref(null);
+    // 状态
+    const loading = ref(true);
     const scrolled = ref(false);
+    const hiddenNav = ref(false);
     const navOpen = ref(false);
+    const activeSection = ref('hero');
+    const starCanvas = ref(null);
+    let lastScrollY = 0;
 
-    // 邮件模态框状态
-    const emailModal = ref({
-      show: false,
-      name: '',
-      email: '',
-      subject: '',
-      message: '',
-      loading: false,
-      tip: ''
-    });
-
+    // 导航
     const navItems = [
       { name: '首页', id: 'hero' },
       { name: '关于', id: 'about' },
       { name: '技能', id: 'skills' },
+      { name: '项目', id: 'projects' },
       { name: '经历', id: 'experience' },
       { name: '联系', id: 'contact' }
     ];
 
+    // Hero 标题
+    const titleLines = ['Creative', 'Frontend', 'Developer'];
+    const currentRole = ref('');
+    const roles = ['Frontend Engineer', 'React Native Expert', 'UI/UX Designer', 'Full Stack Developer'];
+    let roleIndex = 0;
+
+    // 统计数据
     const stats = ref([
-      { number: 10, label: '年前端经验', display: 0 },
-      { number: 50, label: '完成项目', display: 0 },
-      { number: 1000, label: '代码提交(K)', display: 0 },
-      { number: 99, label: '客户满意度%', display: 0 }
+      { number: 10, suffix: '+', label: '年经验', display: 0 },
+      { number: 50, suffix: '+', label: '完成项目', display: 0 },
+      { number: 100, suffix: 'K+', label: '代码行数', display: 0 },
+      { number: 30, suffix: '+', label: '技术栈', display: 0 }
     ]);
 
+    // 关于我
+    const aboutItems = [
+      { icon: '🎯', title: '专注前端', desc: '10年深耕前端领域，精通React、Vue、React Native' },
+      { icon: '🚀', title: '技术驱动', desc: '主导多个大型项目架构设计，推动团队工程化建设' },
+      { icon: '💡', title: '创新思维', desc: '善于解决复杂技术难题，持续探索前沿技术' },
+      { icon: '🤝', title: '团队协作', desc: '优秀的沟通协调能力，带领团队高效交付' }
+    ];
+
+    // 轨道技能
+    const orbitSkills = ['React', 'Vue', 'RN', 'TS', 'Node', 'Webpack', 'Git', 'Docker'];
+
+    // 详细技能
     const skillCategories = [
       {
-        name: '核心技术',
+        name: '前端核心',
+        icon: '⚛️',
         skills: [
-          { name: 'JavaScript / TypeScript / Object-C', level: 95 },
-          { name: 'React / Vue.js / ReactNative', level: 92 },
-          { name: 'HTML5 / CSS3', level: 95 },
-          { name: 'Node.js', level: 80 }
+          { name: 'JavaScript / TypeScript', level: 95 },
+          { name: 'React / Next.js', level: 92 },
+          { name: 'Vue.js / Nuxt.js', level: 90 },
+          { name: 'React Native', level: 88 },
+          { name: 'HTML5 / CSS3', level: 95 }
         ]
       },
       {
         name: '工程化',
+        icon: '🛠️',
         skills: [
-          { name: 'Webpack / Vite', level: 90 },
-          { name: 'Git / CI/CD', level: 85 },
-          { name: 'Docker / K8s', level: 70 },
-          { name: 'Jest / Testing', level: 75 }
+          { name: 'Webpack / Vite / Rollup', level: 90 },
+          { name: 'Git / CI/CD / DevOps', level: 85 },
+          { name: 'Jest / Testing Library', level: 80 },
+          { name: 'Docker / K8s', level: 70 }
         ]
       },
       {
         name: 'UI/设计',
+        icon: '🎨',
         skills: [
-          { name: '响应式设计', level: 90 },
-          { name: '动画交互', level: 85 },
-          { name: 'Figma / Sketch', level: 75 },
-          { name: 'Three.js / WebGL', level: 65 }
+          { name: 'Tailwind / Sass / Less', level: 92 },
+          { name: 'Framer Motion / GSAP', level: 85 },
+          { name: 'Three.js / WebGL', level: 70 },
+          { name: 'Figma / Sketch', level: 80 }
         ]
       }
     ];
 
-    const timeline = [
-      { year: '2016', title: 'iOS起步', desc: '开始移动端开发之旅，深入掌握 Object-C、WebKit' },
-      { year: '2018', title: '移动端进阶', desc: '转向 ReactNative，构建大型移动端应用' },
-      { year: '2020', title: '前端进阶', desc: '专注 React、Vue 前端开发，构建大型单页面应用' },
-      { year: '2024', title: '全栈拓展', desc: '深入 Taro、UniApp，成为前端全栈工程师' },
-      { year: '2026', title: '持续进化', desc: '探索 AI 与前端结合，追求极致用户体验' }
+    // 项目筛选
+    const projectFilters = ['全部', 'Web应用', '移动端', '开源项目'];
+    const activeFilter = ref('全部');
+
+    const projects = ref([
+      {
+        name: '企业级管理后台',
+        desc: '大型电商后台管理系统，支持多租户、权限管理、数据可视化',
+        tags: ['React', 'Ant Design', 'TypeScript'],
+        gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        icon: '📊',
+        category: 'Web应用',
+        featured: true,
+        demo: '#',
+        code: '#'
+      },
+      {
+        name: '社交App',
+        desc: '基于 React Native 的社交平台，支持即时通讯、动态发布',
+        tags: ['React Native', 'Redux', 'Socket.io'],
+        gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+        icon: '💬',
+        category: '移动端',
+        demo: '#',
+        code: '#'
+      },
+      {
+        name: '个人组件库',
+        desc: '开源 UI 组件库，提供 50+ 高质量 React 组件',
+        tags: ['React', 'Rollup', 'Storybook'],
+        gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+        icon: '📦',
+        category: '开源项目',
+        demo: '#',
+        code: '#'
+      },
+      {
+        name: '在线教育平台',
+        desc: '支持直播、录播、互动答题的综合教育平台',
+        tags: ['Vue 3', 'WebRTC', 'Node.js'],
+        gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+        icon: '🎓',
+        category: 'Web应用',
+        demo: '#',
+        code: '#'
+      },
+      {
+        name: '跨境电商小程序',
+        desc: 'Taro 开发的跨境电商小程序，支持多语言、多币种',
+        tags: ['Taro', 'TypeScript', 'GraphQL'],
+        gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+        icon: '🛒',
+        category: '移动端',
+        demo: '#',
+        code: '#'
+      },
+      {
+        name: '可视化大屏',
+        desc: '基于 Three.js 的 3D 数据可视化大屏，实时数据展示',
+        tags: ['Three.js', 'D3.js', 'WebSocket'],
+        gradient: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+        icon: '📈',
+        category: 'Web应用',
+        demo: '#',
+        code: '#'
+      }
+    ]);
+
+    const filteredProjects = computed(() => {
+      if (activeFilter.value === '全部') return projects.value;
+      return projects.value.filter(p => p.category === activeFilter.value);
+    });
+
+    // 工作经历
+    const experiences = [
+      {
+        period: '2024 - 至今',
+        title: '高级前端工程师',
+        company: '某互联网大厂',
+        desc: '负责核心产品前端架构设计，带领10人团队完成微前端改造',
+        tags: ['React', 'Micro-Frontend', '性能优化']
+      },
+      {
+        period: '2020 - 2024',
+        title: '前端技术负责人',
+        company: '某科技公司',
+        desc: '从0到1搭建前端团队，制定开发规范，推动工程化建设',
+        tags: ['Vue', 'React Native', 'CI/CD']
+      },
+      {
+        period: '2018 - 2020',
+        title: '移动端开发工程师',
+        company: '某创业公司',
+        desc: '负责多个App的开发和维护，完成React Native技术转型',
+        tags: ['iOS', 'React Native', 'Swift']
+      },
+      {
+        period: '2016 - 2018',
+        title: 'iOS开发工程师',
+        company: '某软件公司',
+        desc: '开发多个上线App，累计用户超过100万',
+        tags: ['Objective-C', 'Swift', 'UIKit']
+      }
     ];
 
-    const contacts = [
-      { icon: '📧', title: '邮箱', value: 'zonghui1006@163.com' },
-      { icon: '📱', title: '微信', value: 'zonghui1006' },
-      // { icon: '💼', title: 'GitHub', value: 'github.com/zonghui' },
-      { icon: '📍', title: '坐标', value: '中国 · 北京' }
+    // 联系信息
+    const contactInfo = [
+      { icon: '📧', title: '邮箱', value: 'zonghui1006@163.com', type: 'email' },
+      { icon: '📱', title: '微信', value: 'zonghui1006', type: 'wechat' },
+      { icon: '💼', title: 'GitHub', value: 'github.com/zonghui1006', type: 'link' },
+      { icon: '📍', title: '位置', value: '北京，中国', type: 'location' }
     ];
 
-    // 粒子背景
-    const initParticles = () => {
-      const canvas = particleCanvas.value;
+    // 表单
+    const form = reactive({
+      name: '',
+      email: '',
+      subject: '',
+      message: '',
+      submitting: false
+    });
+
+    // Toast
+    const toast = reactive({
+      show: false,
+      message: '',
+      type: 'success'
+    });
+
+    // Footer
+    const footerLinks = [
+      { name: '首页', id: 'hero' },
+      { name: '关于', id: 'about' },
+      { name: '项目', id: 'projects' },
+      { name: '联系', id: 'contact' }
+    ];
+
+    const socials = [
+      { name: 'GitHub', icon: 'gh', url: '#' },
+      { name: 'LinkedIn', icon: 'in', url: '#' },
+      { name: 'Twitter', icon: 'tw', url: '#' }
+    ];
+
+    const currentYear = new Date().getFullYear();
+
+    // 方法
+    const showToast = (message, type = 'success') => {
+      toast.message = message;
+      toast.type = type;
+      toast.show = true;
+      setTimeout(() => toast.show = false, 3000);
+    };
+
+    const scrollTo = (id) => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    };
+
+    const handleContact = (contact) => {
+      if (contact.type === 'email') {
+        window.location.href = `mailto:${contact.value}`;
+      } else if (contact.type === 'wechat') {
+        navigator.clipboard?.writeText(contact.value);
+        showToast('微信号已复制！');
+      } else if (contact.type === 'link') {
+        window.open(`https://${contact.value}`, '_blank');
+      }
+    };
+
+    const submitForm = async () => {
+      form.submitting = true;
+      // 模拟发送
+      await new Promise(r => setTimeout(r, 1500));
+      showToast('消息已发送！');
+      form.name = form.email = form.subject = form.message = '';
+      form.submitting = false;
+    };
+
+    // 星空背景
+    const initStarField = () => {
+      const canvas = starCanvas.value;
       if (!canvas) return;
 
       const ctx = canvas.getContext('2d');
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const resize = () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      };
+      resize();
 
-      const particles = [];
-      const particleCount = 50;
-
-      for (let i = 0; i < particleCount; i++) {
-        particles.push({
+      const stars = [];
+      for (let i = 0; i < 150; i++) {
+        stars.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          radius: Math.random() * 2 + 1
+          size: Math.random() * 2,
+          speed: Math.random() * 0.5 + 0.1,
+          opacity: Math.random()
         });
       }
 
       let animationId;
       const animate = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(26, 26, 46, 0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        particles.forEach((p, i) => {
-          p.x += p.vx;
-          p.y += p.vy;
-
-          if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-          if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        stars.forEach(star => {
+          star.y -= star.speed;
+          if (star.y < 0) star.y = canvas.height;
 
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(102, 126, 234, 0.5)';
+          ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
           ctx.fill();
-
-          // 连线
-          for (let j = i + 1; j < particles.length; j++) {
-            const dx = particles[j].x - p.x;
-            const dy = particles[j].y - p.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < 150) {
-              ctx.beginPath();
-              ctx.moveTo(p.x, p.y);
-              ctx.lineTo(particles[j].x, particles[j].y);
-              ctx.strokeStyle = `rgba(102, 126, 234, ${0.2 * (1 - dist / 150)})`;
-              ctx.stroke();
-            }
-          }
         });
 
         animationId = requestAnimationFrame(animate);
       };
-
       animate();
 
-      const handleResize = () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      };
-      window.addEventListener('resize', handleResize);
-
+      window.addEventListener('resize', resize);
       return () => {
         cancelAnimationFrame(animationId);
-        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('resize', resize);
       };
     };
 
-    // 打字机效果
-    const initTypewriter = () => {
-      const text = 'Frontend Engineer | 前端工程师';
-      let index = 0;
-      const element = typeText.value;
-      if (!element) return;
+    // 角色打字机效果
+    const typeRole = () => {
+      const role = roles[roleIndex];
+      let i = 0;
+      currentRole.value = '';
 
       const type = () => {
-        if (index < text.length) {
-          element.textContent += text.charAt(index);
-          index++;
+        if (i < role.length) {
+          currentRole.value += role[i];
+          i++;
           setTimeout(type, 100);
+        } else {
+          setTimeout(() => {
+            roleIndex = (roleIndex + 1) % roles.length;
+            typeRole();
+          }, 3000);
         }
       };
-
-      setTimeout(type, 1000);
+      type();
     };
 
     // 数字动画
@@ -403,126 +683,29 @@ export default {
 
     // 滚动监听
     const handleScroll = () => {
-      scrolled.value = window.scrollY > 50;
-    };
+      const currentScrollY = window.scrollY;
+      scrolled.value = currentScrollY > 50;
+      hiddenNav.value = currentScrollY > lastScrollY && currentScrollY > 200;
+      lastScrollY = currentScrollY;
 
-    const scrollTo = (id) => {
-      const element = document.getElementById(id);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-    };
-
-    const showEmail = () => {
-      alert('邮箱: zonghui1006@163.com\n(请替换为真实邮箱)');
-    };
-
-    // 打开邮件模态框
-    const openEmailModal = () => {
-      emailModal.value.show = true;
-      emailModal.value.tip = '';
-      document.body.style.overflow = 'hidden';
-    };
-
-    // 关闭邮件模态框
-    const closeEmailModal = () => {
-      emailModal.value.show = false;
-      document.body.style.overflow = '';
-    };
-
-    // 检测是否在微信浏览器中
-    const isWechat = () => {
-      return /MicroMessenger/i.test(navigator.userAgent);
-    };
-
-    // 检测是否在移动端
-    const isMobile = () => {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    };
-
-    // 复制到剪贴板
-    const copyToClipboard = (text) => {
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(() => {
-          alert('已复制到剪贴板: ' + text);
-        });
-      } else {
-        // 兼容旧浏览器
-        const input = document.createElement('input');
-        input.value = text;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
-        alert('已复制到剪贴板: ' + text);
-      }
-    };
-
-    // 处理联系信息点击
-    const handleContactClick = (contact) => {
-      if (contact.title === '邮箱') {
-        if (isWechat()) {
-          // 微信内无法直接使用 mailto，复制邮箱
-          copyToClipboard(contact.value);
-        } else if (isMobile()) {
-          // 移动端使用 mailto
-          window.location.href = `mailto:${contact.value}`;
-        } else {
-          // PC 端打开邮件客户端
-          window.open(`mailto:${contact.value}`, '_blank');
+      // 更新活跃区域
+      navItems.forEach(item => {
+        const element = document.getElementById(item.id);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= 100 && rect.bottom >= 100) {
+            activeSection.value = item.id;
+          }
         }
-      } else if (contact.title === '微信') {
-        copyToClipboard(contact.value);
-        alert('微信号已复制，请在微信中搜索添加');
-      }
-    };
-
-    // 发送邮件
-    const sendEmail = async () => {
-      const { name, email, subject, message } = emailModal.value;
-
-      if (!name || !email || !subject || !message) {
-        emailModal.value.tip = '请填写完整信息';
-        return;
-      }
-
-      emailModal.value.loading = true;
-      emailModal.value.tip = '';
-
-      try {
-        // 使用 Formspree 服务发送邮件
-        // 你需要在 https://formspree.io 注册并获取 endpoint
-        // 这里使用 mailto 作为备选方案
-        const mailtoLink = `mailto:zonghui1006@163.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
-          `发件人: ${name}\n邮箱: ${email}\n\n${message}`
-        )}`;
-
-        // 尝试打开邮件客户端
-        window.location.href = mailtoLink;
-
-        // 提示用户
-        emailModal.value.tip = '已打开邮件客户端，请检查并发送邮件';
-
-        // 清空表单
-        setTimeout(() => {
-          emailModal.value.name = '';
-          emailModal.value.email = '';
-          emailModal.value.subject = '';
-          emailModal.value.message = '';
-        }, 1000);
-
-      } catch (error) {
-        emailModal.value.tip = '发送失败，请直接复制邮箱发送';
-      } finally {
-        emailModal.value.loading = false;
-      }
+      });
     };
 
     onMounted(() => {
-      initParticles();
-      initTypewriter();
-      animateNumbers();
-      window.addEventListener('scroll', handleScroll);
+      setTimeout(() => loading.value = false, 1500);
+      initStarField();
+      typeRole();
+      setTimeout(animateNumbers, 2000);
+      window.addEventListener('scroll', handleScroll, { passive: true });
     });
 
     onUnmounted(() => {
@@ -530,22 +713,13 @@ export default {
     });
 
     return {
-      particleCanvas,
-      typeText,
-      scrolled,
-      navOpen,
-      emailModal,
-      navItems,
-      stats,
-      skillCategories,
-      timeline,
-      contacts,
-      scrollTo,
-      showEmail,
-      openEmailModal,
-      closeEmailModal,
-      handleContactClick,
-      sendEmail
+      loading, scrolled, hiddenNav, navOpen, activeSection,
+      starCanvas, navItems, titleLines, currentRole, stats,
+      aboutItems, orbitSkills, skillCategories,
+      projectFilters, activeFilter, filteredProjects,
+      experiences, contactInfo, form, toast,
+      footerLinks, socials, currentYear,
+      scrollTo, handleContact, submitForm
     };
   }
 };
@@ -562,25 +736,57 @@ export default {
 :root {
   --primary: #667eea;
   --secondary: #764ba2;
+  --accent: #f093fb;
   --dark: #1a1a2e;
-  --light: #fff;
+  --light: #ffffff;
+  --gray: #8892b0;
   --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
-.portfolio {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: var(--dark);
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--dark);
+  color: var(--light);
+  line-height: 1.6;
   overflow-x: hidden;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
+/* 加载动画 */
+.loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  gap: 20px;
 }
 
-/* 粒子背景 */
-.particle-bg {
+.loader-ring {
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(102, 126, 234, 0.3);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 星空背景 */
+.star-bg {
   position: fixed;
   top: 0;
   left: 0;
@@ -605,30 +811,61 @@ export default {
 }
 
 .navbar-scrolled {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(26, 26, 46, 0.9);
   backdrop-filter: blur(10px);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+  padding: 15px 50px;
+}
+
+.navbar-hidden {
+  transform: translateY(-100%);
 }
 
 .nav-brand {
-  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-text {
+  font-size: 1.8rem;
   font-weight: bold;
   background: var(--gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
+.brand-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
+}
+
 .nav-links {
   display: flex;
-  gap: 30px;
+  gap: 40px;
 }
 
 .nav-links a {
-  cursor: pointer;
-  color: var(--dark);
+  color: var(--light);
+  text-decoration: none;
+  font-size: 0.95rem;
   font-weight: 500;
-  transition: color 0.3s;
   position: relative;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  opacity: 1;
 }
 
 .nav-links a::after {
@@ -642,94 +879,182 @@ export default {
   transition: width 0.3s;
 }
 
-.nav-links a:hover::after {
+.nav-links a:hover::after,
+.nav-links a.active::after {
   width: 100%;
 }
 
-/* 英雄区域 */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.nav-toggle span {
+  width: 25px;
+  height: 2px;
+  background: var(--light);
+  transition: all 0.3s;
+}
+
+.nav-toggle.active span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.nav-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* Hero */
 .hero {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 100px 20px;
+  padding: 100px 50px;
   position: relative;
+  overflow: hidden;
 }
 
-.hero-content {
-  z-index: 1;
-}
-
-/* Glitch 效果 */
-.glitch-wrapper {
-  margin-bottom: 20px;
-}
-
-.glitch {
-  font-size: 6rem;
-  font-weight: bold;
-  position: relative;
-  color: var(--dark);
-  text-shadow: 2px 2px 0px rgba(102, 126, 234, 0.5);
-  animation: glitch 3s infinite;
-}
-
-.glitch::before,
-.glitch::after {
-  content: attr(data-text);
+.hero-3d-container {
   position: absolute;
   top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
+  perspective: 1000px;
+}
+
+.floating-shapes {
+  position: relative;
   width: 100%;
   height: 100%;
 }
 
-.glitch::before {
-  color: #667eea;
-  animation: glitch-1 2s infinite linear alternate-reverse;
-  clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+.shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+  animation: float 20s ease-in-out infinite;
 }
 
-.glitch::after {
-  color: #764ba2;
-  animation: glitch-2 3s infinite linear alternate-reverse;
-  clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+.shape-1 {
+  width: 400px;
+  height: 400px;
+  background: var(--primary);
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
 }
 
-@keyframes glitch {
-  0%, 90%, 100% { transform: translate(0); }
-  92% { transform: translate(-2px, 2px); }
-  94% { transform: translate(2px, -2px); }
-  96% { transform: translate(-2px, -2px); }
-  98% { transform: translate(2px, 2px); }
+.shape-2 {
+  width: 300px;
+  height: 300px;
+  background: var(--secondary);
+  top: 60%;
+  right: 10%;
+  animation-delay: -5s;
 }
 
-@keyframes glitch-1 {
-  0%, 100% { transform: translate(0); }
-  20% { transform: translate(-3px, 3px); }
-  40% { transform: translate(-3px, -3px); }
-  60% { transform: translate(3px, 3px); }
-  80% { transform: translate(3px, -3px); }
+.shape-3 {
+  width: 250px;
+  height: 250px;
+  background: var(--accent);
+  bottom: 10%;
+  left: 30%;
+  animation-delay: -10s;
 }
 
-@keyframes glitch-2 {
-  0%, 100% { transform: translate(0); }
-  20% { transform: translate(3px, -3px); }
-  40% { transform: translate(3px, 3px); }
-  60% { transform: translate(-3px, -3px); }
-  80% { transform: translate(-3px, 3px); }
+.shape-4 {
+  width: 350px;
+  height: 350px;
+  background: #43e97b;
+  top: 30%;
+  right: 30%;
+  animation-delay: -15s;
 }
 
-/* 打字机 */
-.typing-text {
-  font-size: 1.5rem;
-  color: var(--primary);
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(50px, -50px) scale(1.1); }
+  50% { transform: translate(0, 50px) scale(0.9); }
+  75% { transform: translate(-50px, -25px) scale(1.05); }
+}
+
+.hero-content {
+  text-align: center;
+  z-index: 1;
+  max-width: 900px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  margin-bottom: 30px;
+}
+
+.badge-pulse {
+  width: 8px;
+  height: 8px;
+  background: #43e97b;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.hero-title {
+  font-size: 5rem;
+  font-weight: 800;
+  line-height: 1.1;
   margin-bottom: 20px;
-  font-family: 'Courier New', monospace;
 }
 
-.cursor {
+.title-line {
+  display: block;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: slideUp 0.8s ease forwards;
+  animation-delay: var(--delay);
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+@keyframes slideUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-role {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: var(--gray);
+}
+
+.role-prefix {
+  margin-right: 10px;
+}
+
+.role-text {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.role-cursor {
   animation: blink 1s infinite;
 }
 
@@ -740,58 +1065,32 @@ export default {
 
 .hero-desc {
   font-size: 1.2rem;
-  color: #666;
-  margin-bottom: 40px;
+  color: var(--gray);
   max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto 40px;
+  line-height: 1.8;
 }
 
-/* 统计数据 */
-.hero-stats {
-  display: flex;
-  justify-content: center;
-  gap: 60px;
-  margin-bottom: 50px;
-  flex-wrap: wrap;
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-number {
-  font-size: 3rem;
-  font-weight: bold;
-  background: var(--gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.stat-label {
-  color: #888;
-  font-size: 0.9rem;
-  margin-top: 5px;
-}
-
-/* 按钮 */
-.hero-buttons {
+.hero-actions {
   display: flex;
   gap: 20px;
   justify-content: center;
-  flex-wrap: wrap;
+  margin-bottom: 60px;
 }
 
 .btn {
-  padding: 15px 40px;
-  font-size: 1rem;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 35px;
   border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s ease;
-  font-weight: 600;
 }
 
 .btn-primary {
@@ -799,47 +1098,67 @@ export default {
   color: white;
 }
 
-.btn-glow::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
-
-.btn-glow:hover::before {
-  width: 300px;
-  height: 300px;
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
 }
 
 .btn-secondary {
   background: transparent;
-  color: var(--dark);
-  border: 2px solid var(--primary);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .btn-secondary:hover {
-  background: var(--primary);
-  color: white;
+  border-color: var(--primary);
+  background: rgba(102, 126, 234, 0.1);
 }
 
-.btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+.btn-icon {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
 }
 
-.btn-large {
-  padding: 18px 50px;
-  font-size: 1.1rem;
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  flex-wrap: wrap;
 }
 
-/* 滚动指示器 */
-.scroll-indicator {
+.stat-item {
+  text-align: center;
+  animation: fadeIn 0.6s ease forwards;
+  animation-delay: var(--delay);
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+.stat-value {
+  font-size: 3rem;
+  font-weight: 800;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.stat-suffix {
+  font-size: 1.5rem;
+}
+
+.stat-label {
+  color: var(--gray);
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
+.scroll-hint {
   position: absolute;
   bottom: 40px;
   left: 50%;
@@ -848,593 +1167,856 @@ export default {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  color: #888;
-  font-size: 0.9rem;
+  color: var(--gray);
+  font-size: 0.85rem;
 }
 
 .mouse {
   width: 26px;
   height: 40px;
-  border: 2px solid #888;
+  border: 2px solid var(--gray);
   border-radius: 13px;
   position: relative;
 }
 
-.mouse::after {
-  content: '';
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
+.wheel {
   width: 4px;
   height: 8px;
   background: var(--primary);
   border-radius: 2px;
-  animation: scroll-wheel 2s infinite;
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: scroll 2s infinite;
 }
 
-@keyframes scroll-wheel {
+@keyframes scroll {
   0% { top: 8px; opacity: 1; }
   100% { top: 20px; opacity: 0; }
 }
 
-/* 区域标题 */
-.section-title {
-  font-size: 2.5rem;
-  text-align: center;
-  margin-bottom: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
+/* 通用区域 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 30px;
 }
 
-.section-title.light {
+section {
+  padding: 120px 0;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 80px;
+}
+
+.section-header.light {
   color: white;
 }
 
-.title-line {
-  width: 60px;
-  height: 3px;
-  background: var(--gradient);
-  border-radius: 2px;
-}
-
-.section-title.light .title-line {
-  background: rgba(255, 255, 255, 0.5);
-}
-
-/* 关于区域 */
-.about {
-  padding: 100px 0;
-  background: #f8f9fa;
-}
-
-.about-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
-}
-
-.about-card {
-  background: white;
-  padding: 40px;
-  border-radius: 20px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.about-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-}
-
-.card-shine {
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  transition: left 0.5s;
-}
-
-.about-card:hover .card-shine {
-  left: 100%;
-}
-
-.about-icon {
-  font-size: 3rem;
+.section-tag {
+  display: inline-block;
+  background: rgba(102, 126, 234, 0.1);
+  color: var(--primary);
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
   margin-bottom: 20px;
 }
 
-.about-card h3 {
-  font-size: 1.5rem;
-  margin-bottom: 15px;
-  color: var(--dark);
+.section-title {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 20px;
 }
 
-.about-card p {
-  color: #666;
-  line-height: 1.8;
+.section-desc {
+  color: var(--gray);
+  font-size: 1.1rem;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
-/* 技能区域 */
-.skills {
-  padding: 100px 0;
-  background: var(--dark);
+/* 关于我 */
+.about {
+  background: rgba(255, 255, 255, 0.02);
 }
 
-.skills-grid {
+.about-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+.about-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.main-card {
+  text-align: center;
+}
+
+.card-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 20px;
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  background: var(--gradient);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.avatar-ring {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  animation: rotate 10s linear infinite;
+}
+
+@keyframes rotate {
+  to { transform: rotate(360deg); }
+}
+
+.about-card h3 {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+}
+
+.about-card .title {
+  color: var(--primary);
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.about-card .bio {
+  color: var(--gray);
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--gray);
+}
+
+.location svg {
+  width: 20px;
+  height: 20px;
+  fill: var(--primary);
+}
+
+.about-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.about-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 30px;
+  transition: all 0.3s;
+}
+
+.about-item:hover {
+  transform: translateY(-5px);
+  border-color: var(--primary);
+}
+
+.item-icon {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+}
+
+.about-item h4 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.about-item p {
+  color: var(--gray);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* 技能 */
+.skills-visual {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 80px;
+}
+
+.skill-orbit {
+  position: relative;
+  width: 400px;
+  height: 400px;
+}
+
+.skill-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  background: var(--gradient);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  z-index: 2;
+}
+
+.skill-satellites {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  animation: orbit 20s linear infinite;
+}
+
+.satellite {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(calc(var(--orbit) * 360deg / var(--total))) translateX(150px);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  animation: counter-orbit 20s linear infinite;
+}
+
+@keyframes orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes counter-orbit {
+  to { transform: translate(-50%, -50%) rotate(calc(var(--orbit) * 360deg / var(--total) - 360deg)) translateX(150px); }
+}
+
+.skills-detailed {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 40px;
 }
 
 .skill-category {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 30px;
-  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 30px;
 }
 
 .category-title {
-  color: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 1.3rem;
+  margin-bottom: 30px;
+}
+
+.cat-icon {
+  font-size: 1.5rem;
+}
+
+.skill-bar-item {
   margin-bottom: 25px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid var(--primary);
-}
-
-.skill-item {
-  margin-bottom: 20px;
-  animation: slideIn 0.6s ease forwards;
-  animation-delay: var(--delay);
-  opacity: 0;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
 }
 
 .skill-info {
   display: flex;
   justify-content: space-between;
-  color: rgba(255, 255, 255, 0.8);
   margin-bottom: 8px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
-.skill-bar {
+.skill-name {
+  color: var(--gray);
+}
+
+.skill-percent {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.skill-progress-bar {
   height: 8px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   overflow: hidden;
 }
 
-.skill-progress {
+.skill-fill {
   height: 100%;
   background: var(--gradient);
   border-radius: 4px;
-  transition: width 1.5s ease;
   position: relative;
+  animation: fillBar 1.5s ease forwards;
 }
 
-.skill-progress::after {
-  content: '';
+@keyframes fillBar {
+  from { width: 0; }
+}
+
+.skill-shine {
   position: absolute;
   top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shine 2s infinite;
+}
+
+@keyframes shine {
+  to { left: 100%; }
+}
+
+/* 项目 */
+.projects {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.project-filters {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 50px;
+  flex-wrap: wrap;
+}
+
+.project-filters button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--gray);
+  padding: 10px 25px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+}
+
+.project-filters button:hover,
+.project-filters button.active {
+  background: var(--gradient);
+  border-color: transparent;
+  color: white;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.project-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.project-card:hover {
+  transform: translateY(-10px);
+  border-color: var(--primary);
+}
+
+.project-card.featured {
+  grid-column: span 2;
+}
+
+.project-image {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.project-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+}
+
+.project-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
   right: 0;
   bottom: 0;
-  width: 30px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3));
-  animation: shimmer 2s infinite;
+  background: rgba(26, 26, 46, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
-@keyframes shimmer {
-  0% { transform: translateX(-30px); }
-  100% { transform: translateX(30px); }
+.project-card:hover .project-overlay {
+  opacity: 1;
 }
 
-/* 时间轴 */
-.experience {
-  padding: 100px 0;
-  background: #f8f9fa;
+.project-links {
+  display: flex;
+  gap: 15px;
 }
 
-.timeline {
+.link-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gradient);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: transform 0.3s;
+}
+
+.link-btn:hover {
+  transform: scale(1.05);
+}
+
+.link-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.project-info {
+  padding: 25px;
+}
+
+.project-info h3 {
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+}
+
+.project-info p {
+  color: var(--gray);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.project-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.project-tags span {
+  background: rgba(102, 126, 234, 0.1);
+  color: var(--primary);
+  padding: 5px 12px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+}
+
+/* 经历 */
+.timeline-container {
   position: relative;
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-.timeline::before {
-  content: '';
+.timeline-line {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   width: 2px;
   height: 100%;
-  background: var(--gradient);
+  background: linear-gradient(to bottom, var(--primary), var(--secondary));
+}
+
+.timeline-items {
+  position: relative;
 }
 
 .timeline-item {
   position: relative;
-  padding: 20px 0;
   width: 50%;
-  padding-right: 50px;
+  padding: 20px 40px;
 }
 
-.timeline-item.timeline-right {
+.timeline-item.item-right {
   margin-left: 50%;
-  padding-right: 0;
-  padding-left: 50px;
 }
 
 .timeline-dot {
   position: absolute;
-  right: -8px;
-  top: 30px;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   background: var(--gradient);
   border-radius: 50%;
-  border: 3px solid white;
-  box-shadow: 0 0 0 3px var(--primary);
+  top: 30px;
 }
 
-.timeline-right .timeline-dot {
-  right: auto;
-  left: -8px;
+.item-left .timeline-dot {
+  right: -10px;
 }
 
-.timeline-content {
-  background: white;
-  padding: 25px;
-  border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s;
+.item-right .timeline-dot {
+  left: -10px;
 }
 
-.timeline-content:hover {
-  transform: scale(1.05);
+.dot-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background: var(--primary);
+  border-radius: 50%;
+  animation: dotPulse 2s infinite;
 }
 
-.timeline-year {
+@keyframes dotPulse {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+.timeline-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 30px;
+  transition: all 0.3s;
+}
+
+.timeline-card:hover {
+  transform: scale(1.02);
+  border-color: var(--primary);
+}
+
+.card-period {
   display: inline-block;
   background: var(--gradient);
   color: white;
   padding: 5px 15px;
-  border-radius: 20px;
-  font-size: 0.9rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  margin-bottom: 15px;
+}
+
+.card-title {
+  font-size: 1.4rem;
+  margin-bottom: 5px;
+}
+
+.card-company {
+  color: var(--primary);
+  font-weight: 600;
   margin-bottom: 10px;
 }
 
-.timeline-content h3 {
-  color: var(--dark);
-  margin-bottom: 10px;
-}
-
-.timeline-content p {
-  color: #666;
+.card-desc {
+  color: var(--gray);
   font-size: 0.95rem;
   line-height: 1.6;
+  margin-bottom: 15px;
 }
 
-/* 联系区域 */
-.contact {
-  padding: 100px 0;
-  background: var(--dark);
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.contact-content {
+.card-tags span {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 5px 12px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+}
+
+/* 联系 */
+.contact-wrapper {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 60px;
-  align-items: center;
 }
 
-.contact-info {
+.contact-info-cards {
   display: grid;
-  gap: 25px;
+  gap: 20px;
 }
 
-.contact-item {
+.info-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 25px;
   display: flex;
   align-items: center;
   gap: 20px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 20px;
-  border-radius: 12px;
-  transition: transform 0.3s, background 0.3s;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
 }
 
-.contact-item:hover {
+.info-card:hover {
   transform: translateX(10px);
-  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--primary);
 }
 
-.contact-icon {
-  font-size: 1.5rem;
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--gradient);
-  border-radius: 12px;
+.info-icon {
+  font-size: 2rem;
 }
 
-.contact-detail h4 {
-  color: rgba(255, 255, 255, 0.6);
+.info-card h4 {
+  color: var(--gray);
   font-size: 0.9rem;
   margin-bottom: 5px;
 }
 
-.contact-detail p {
-  color: white;
+.info-card p {
   font-size: 1.1rem;
 }
 
-.contact-cta {
-  text-align: center;
-  padding: 40px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
+.info-arrow {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.info-card:hover .info-arrow {
+  opacity: 1;
+}
+
+.contact-form-wrapper {
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.contact-cta h3 {
-  color: white;
-  font-size: 1.8rem;
-  margin-bottom: 15px;
-}
-
-.contact-cta p {
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 30px;
-}
-
-/* 页脚 */
-.footer {
-  background: #0f0f1a;
-  color: rgba(255, 255, 255, 0.5);
-  text-align: center;
-  padding: 30px;
-  font-size: 0.9rem;
-}
-
-/* 邮件模态框 */
-.email-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  padding: 20px;
-  backdrop-filter: blur(5px);
-}
-
-.email-modal-content {
-  background: white;
   border-radius: 20px;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow: hidden;
-  animation: modalSlideIn 0.3s ease;
+  padding: 40px;
 }
 
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-30px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.email-modal-header {
-  background: var(--gradient);
-  padding: 20px 30px;
+.contact-form {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 25px;
 }
 
-.email-modal-header h3 {
-  color: white;
-  font-size: 1.3rem;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 2rem;
-  cursor: pointer;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background 0.3s;
-}
-
-.modal-close:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.email-modal-body {
-  padding: 30px;
-  max-height: 70vh;
-  overflow-y: auto;
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 }
 
 .form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: #333;
-  font-weight: 500;
-  font-size: 0.95rem;
+  position: relative;
 }
 
 .form-group input,
 .form-group textarea {
   width: 100%;
-  padding: 12px 15px;
-  border: 2px solid #e0e0e0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
+  padding: 15px;
+  color: white;
   font-size: 1rem;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  font-family: inherit;
+  transition: all 0.3s;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.form-group input:disabled {
-  background: #f5f5f5;
-  color: #666;
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-
-.form-actions {
-  display: flex;
-  gap: 15px;
-  margin-top: 25px;
-}
-
-.form-actions .btn {
-  flex: 1;
-  padding: 14px 20px;
-}
-
-.email-tips {
-  margin-top: 20px;
-  padding: 15px;
-  background: #f0f7ff;
-  border-radius: 10px;
-  text-align: center;
-}
-
-.email-tips p {
-  color: var(--primary);
-  font-size: 0.95rem;
-}
-
-/* 联系项可点击样式 */
-.contact-item {
-  cursor: pointer;
-}
-
-/* 导航汉堡菜单 */
-.nav-toggle {
-  display: none;
-  flex-direction: column;
-  gap: 5px;
-  cursor: pointer;
-  padding: 10px;
-  z-index: 1001;
-}
-
-.nav-toggle span {
-  width: 25px;
-  height: 2px;
-  background: var(--dark);
+.form-group label {
+  position: absolute;
+  left: 15px;
+  top: 15px;
+  color: var(--gray);
+  pointer-events: none;
   transition: all 0.3s;
 }
 
-.navbar-scrolled .nav-toggle span {
+.form-group input:focus + label,
+.form-group input:not(:placeholder-shown) + label,
+.form-group textarea:focus + label,
+.form-group textarea:not(:placeholder-shown) + label {
+  top: -10px;
+  left: 10px;
+  font-size: 0.8rem;
   background: var(--dark);
+  padding: 0 5px;
+  color: var(--primary);
 }
 
-/* 触摸优化 */
-.btn, .nav-links a, .timeline-content, .about-card, .contact-item {
-  -webkit-tap-highlight-color: transparent;
+.btn-submit {
+  width: 100%;
+  justify-content: center;
+  background: var(--gradient);
+  color: white;
 }
 
-/* 响应式 - 平板和手机 */
+.btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--gradient);
+  color: white;
+  padding: 15px 30px;
+  border-radius: 50px;
+  z-index: 9999;
+  opacity: 0;
+  transition: all 0.3s;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* 页脚 */
+.footer {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 60px 0 30px;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+.footer-brand span {
+  font-size: 2rem;
+  font-weight: bold;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.footer-brand p {
+  color: var(--gray);
+  margin-top: 5px;
+}
+
+.footer-links {
+  display: flex;
+  gap: 30px;
+}
+
+.footer-links a {
+  color: var(--gray);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.footer-links a:hover {
+  color: var(--primary);
+}
+
+.footer-social {
+  display: flex;
+  gap: 15px;
+}
+
+.footer-social a {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray);
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.footer-social a:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--gray);
+  font-size: 0.9rem;
+}
+
+/* 响应式 */
+@media (max-width: 1024px) {
+  .projects-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .project-card.featured {
+    grid-column: span 2;
+  }
+
+  .skills-detailed {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
-  .glitch {
-    font-size: 3.5rem;
-  }
-
-  .hero-stats {
-    gap: 30px;
-  }
-
-  .stat-number {
-    font-size: 2rem;
-  }
-
-  .nav-links {
-    display: none;
-  }
-
-  .timeline::before {
-    left: 20px;
-  }
-
-  .timeline-item,
-  .timeline-item.timeline-right {
-    width: 100%;
-    margin-left: 0;
-    padding-left: 60px;
-    padding-right: 0;
-  }
-
-  .timeline-dot,
-  .timeline-right .timeline-dot {
-    left: 12px;
-    right: auto;
-  }
-
-  .contact-content {
-    grid-template-columns: 1fr;
-  }
-
-  /* 导航 */
   .navbar {
     padding: 15px 20px;
-  }
-
-  .nav-toggle {
-    display: flex;
   }
 
   .nav-links {
@@ -1444,318 +2026,116 @@ export default {
     width: 70%;
     max-width: 300px;
     height: 100vh;
-    background: white;
+    background: var(--dark);
     flex-direction: column;
-    padding: 80px 30px 30px;
-    transition: right 0.3s ease;
-    box-shadow: -5px 0 30px rgba(0, 0, 0, 0.1);
-    gap: 0;
-    margin: 0;
-    display: flex;
+    padding: 80px 30px;
+    transition: right 0.3s;
   }
 
   .nav-links.nav-open {
     right: 0;
   }
 
-  .nav-links a {
-    padding: 15px 0;
-    border-bottom: 1px solid #eee;
-    font-size: 1.1rem;
+  .nav-toggle {
+    display: flex;
   }
 
-  /* Hero 区域 */
   .hero {
-    padding: 80px 15px 60px;
-    min-height: auto;
+    padding: 100px 20px;
   }
 
-  .glitch {
-    font-size: 3rem;
+  .hero-title {
+    font-size: 2.8rem;
   }
 
-  .typing-text {
-    font-size: 1rem;
-    padding: 0 10px;
-  }
-
-  .hero-desc {
-    font-size: 1rem;
-    padding: 0 15px;
+  .hero-actions {
+    flex-direction: column;
+    padding: 0 40px;
   }
 
   .hero-stats {
-    gap: 20px;
-    flex-wrap: wrap;
-    padding: 0 10px;
+    gap: 30px;
   }
 
-  .stat-item {
-    flex: 0 0 45%;
-  }
-
-  .stat-number {
+  .stat-value {
     font-size: 2rem;
   }
 
-  .stat-label {
-    font-size: 0.8rem;
+  section {
+    padding: 80px 0;
   }
 
-  .hero-buttons {
-    flex-direction: column;
-    gap: 15px;
-    padding: 0 30px;
-    width: 100%;
-  }
-
-  .btn {
-    width: 100%;
-    padding: 14px 30px;
-  }
-
-  /* 区域标题 */
   .section-title {
-    font-size: 1.8rem;
-    margin-bottom: 40px;
-    flex-direction: column;
-    gap: 10px;
+    font-size: 2rem;
   }
 
-  .title-line {
-    width: 40px;
-  }
-
-  /* 关于区域 */
-  .about {
-    padding: 60px 0;
-  }
-
-  .about-content {
+  .about-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
-    padding: 0 15px;
   }
 
-  .about-card {
-    padding: 30px 20px;
-  }
-
-  .about-icon {
-    font-size: 2.5rem;
-  }
-
-  .about-card h3 {
-    font-size: 1.3rem;
-  }
-
-  .about-card p {
-    font-size: 0.9rem;
-  }
-
-  /* 技能区域 */
-  .skills {
-    padding: 60px 0;
-  }
-
-  .skills-grid {
+  .about-cards {
     grid-template-columns: 1fr;
-    gap: 25px;
-    padding: 0 15px;
   }
 
-  .skill-category {
-    padding: 25px 20px;
+  .skill-orbit {
+    width: 300px;
+    height: 300px;
   }
 
-  .category-title {
-    font-size: 1.1rem;
-    margin-bottom: 20px;
+  .satellite {
+    transform: translate(-50%, -50%) rotate(calc(var(--orbit) * 360deg / var(--total))) translateX(100px) !important;
   }
 
-  .skill-info {
-    font-size: 0.85rem;
+  .skills-detailed {
+    grid-template-columns: 1fr;
   }
 
-  /* 时间轴 */
-  .experience {
-    padding: 60px 0;
+  .projects-grid {
+    grid-template-columns: 1fr;
   }
 
-  .timeline {
-    padding: 0 15px;
+  .project-card.featured {
+    grid-column: span 1;
   }
 
-  .timeline::before {
-    left: 15px;
+  .timeline-line {
+    left: 20px;
   }
 
   .timeline-item,
-  .timeline-item.timeline-right {
+  .timeline-item.item-right {
     width: 100%;
     margin-left: 0;
-    padding-left: 50px;
+    padding-left: 60px;
     padding-right: 0;
   }
 
   .timeline-dot,
-  .timeline-right .timeline-dot {
-    left: 7px;
-    right: auto;
-    width: 14px;
-    height: 14px;
+  .item-right .timeline-dot {
+    left: 10px !important;
+    right: auto !important;
   }
 
-  .timeline-content {
-    padding: 20px;
-  }
-
-  .timeline-year {
-    font-size: 0.8rem;
-  }
-
-  .timeline-content h3 {
-    font-size: 1.1rem;
-  }
-
-  .timeline-content p {
-    font-size: 0.85rem;
-  }
-
-  /* 联系区域 */
-  .contact {
-    padding: 60px 0;
-  }
-
-  .contact-content {
+  .contact-wrapper {
     grid-template-columns: 1fr;
-    gap: 40px;
-    padding: 0 15px;
   }
 
-  .contact-item {
-    padding: 15px;
+  .form-row {
+    grid-template-columns: 1fr;
   }
 
-  .contact-icon {
-    width: 45px;
-    height: 45px;
-    font-size: 1.3rem;
-  }
-
-  .contact-detail h4 {
-    font-size: 0.85rem;
-  }
-
-  .contact-detail p {
-    font-size: 0.95rem;
-  }
-
-  .contact-cta {
-    padding: 30px 20px;
-  }
-
-  .contact-cta h3 {
-    font-size: 1.4rem;
-  }
-
-  .contact-cta p {
-    font-size: 0.9rem;
-  }
-
-  /* 滚动指示器隐藏 */
-  .scroll-indicator {
-    display: none;
-  }
-
-  /* 触摸设备优化 */
-  .about-card:active,
-  .timeline-content:active {
-    transform: scale(0.98);
-  }
-
-  /* 邮件模态框移动端 */
-  .email-modal {
-    padding: 15px;
-  }
-
-  .email-modal-content {
-    border-radius: 15px;
-    max-height: 85vh;
-  }
-
-  .email-modal-header {
-    padding: 15px 20px;
-  }
-
-  .email-modal-header h3 {
-    font-size: 1.1rem;
-  }
-
-  .email-modal-body {
-    padding: 20px;
-  }
-
-  .form-group {
-    margin-bottom: 15px;
-  }
-
-  .form-group label {
-    font-size: 0.9rem;
-    margin-bottom: 6px;
-  }
-
-  .form-group input,
-  .form-group textarea {
-    padding: 10px 12px;
-    font-size: 0.95rem;
-  }
-
-  .form-actions {
+  .footer-content {
     flex-direction: column;
-    gap: 10px;
-  }
-
-  .form-actions .btn {
-    width: 100%;
+    text-align: center;
   }
 }
 
-/* 超小屏幕适配 */
-@media (max-width: 375px) {
-  .glitch {
-    font-size: 2.5rem;
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 2.2rem;
   }
 
-  .stat-number {
-    font-size: 1.8rem;
-  }
-
-  .section-title {
-    font-size: 1.5rem;
-  }
-
-  .btn {
-    font-size: 0.9rem;
-  }
-}
-
-/* 横屏手机适配 */
-@media (max-height: 500px) and (orientation: landscape) {
-  .hero {
-    min-height: auto;
-    padding-top: 60px;
-  }
-
-  .glitch {
-    font-size: 2.5rem;
-  }
-
-  .hero-stats {
-    margin-bottom: 30px;
-  }
-
-  .scroll-indicator {
+  .skill-orbit {
     display: none;
   }
 }
