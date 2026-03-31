@@ -144,7 +144,7 @@
         </h2>
         <div class="contact-content">
           <div class="contact-info">
-            <div class="contact-item" v-for="(contact, idx) in contacts" :key="idx">
+            <div class="contact-item" v-for="(contact, idx) in contacts" :key="idx" @click="handleContactClick(contact)">
               <div class="contact-icon">{{ contact.icon }}</div>
               <div class="contact-detail">
                 <h4>{{ contact.title }}</h4>
@@ -155,13 +155,56 @@
           <div class="contact-cta">
             <h3>有项目想法？</h3>
             <p>无论是技术交流还是项目合作，都欢迎随时联系我</p>
-            <button class="btn btn-large btn-glow" @click="showEmail">
+            <button class="btn btn-large btn-glow" @click="openEmailModal">
               发送邮件
             </button>
           </div>
         </div>
       </div>
     </section>
+
+    <!-- 邮件发送模态框 -->
+    <div class="email-modal" v-if="emailModal.show" @click.self="closeEmailModal">
+      <div class="email-modal-content">
+        <div class="email-modal-header">
+          <h3>发送邮件</h3>
+          <button class="modal-close" @click="closeEmailModal">&times;</button>
+        </div>
+        <div class="email-modal-body">
+          <form @submit.prevent="sendEmail">
+            <div class="form-group">
+              <label>收件人</label>
+              <input type="text" value="zonghui1006@163.com" disabled />
+            </div>
+            <div class="form-group">
+              <label>您的姓名</label>
+              <input type="text" v-model="emailModal.name" placeholder="请输入您的姓名" required />
+            </div>
+            <div class="form-group">
+              <label>您的邮箱</label>
+              <input type="email" v-model="emailModal.email" placeholder="请输入您的邮箱" required />
+            </div>
+            <div class="form-group">
+              <label>主题</label>
+              <input type="text" v-model="emailModal.subject" placeholder="请输入邮件主题" required />
+            </div>
+            <div class="form-group">
+              <label>内容</label>
+              <textarea v-model="emailModal.message" rows="5" placeholder="请输入邮件内容" required></textarea>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" @click="closeEmailModal">取消</button>
+              <button type="submit" class="btn btn-primary" :disabled="emailModal.loading">
+                {{ emailModal.loading ? '发送中...' : '发送邮件' }}
+              </button>
+            </div>
+          </form>
+          <div class="email-tips" v-if="emailModal.tip">
+            <p>{{ emailModal.tip }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 页脚 -->
     <footer class="footer">
@@ -180,6 +223,17 @@ export default {
     const typeText = ref(null);
     const scrolled = ref(false);
     const navOpen = ref(false);
+
+    // 邮件模态框状态
+    const emailModal = ref({
+      show: false,
+      name: '',
+      email: '',
+      subject: '',
+      message: '',
+      loading: false,
+      tip: ''
+    });
 
     const navItems = [
       { name: '首页', id: 'hero' },
@@ -360,7 +414,108 @@ export default {
     };
 
     const showEmail = () => {
-      alert('邮箱: zonghui@example.com\n(请替换为真实邮箱)');
+      alert('邮箱: zonghui1006@163.com\n(请替换为真实邮箱)');
+    };
+
+    // 打开邮件模态框
+    const openEmailModal = () => {
+      emailModal.value.show = true;
+      emailModal.value.tip = '';
+      document.body.style.overflow = 'hidden';
+    };
+
+    // 关闭邮件模态框
+    const closeEmailModal = () => {
+      emailModal.value.show = false;
+      document.body.style.overflow = '';
+    };
+
+    // 检测是否在微信浏览器中
+    const isWechat = () => {
+      return /MicroMessenger/i.test(navigator.userAgent);
+    };
+
+    // 检测是否在移动端
+    const isMobile = () => {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    };
+
+    // 复制到剪贴板
+    const copyToClipboard = (text) => {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          alert('已复制到剪贴板: ' + text);
+        });
+      } else {
+        // 兼容旧浏览器
+        const input = document.createElement('input');
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        alert('已复制到剪贴板: ' + text);
+      }
+    };
+
+    // 处理联系信息点击
+    const handleContactClick = (contact) => {
+      if (contact.title === '邮箱') {
+        if (isWechat()) {
+          // 微信内无法直接使用 mailto，复制邮箱
+          copyToClipboard(contact.value);
+        } else if (isMobile()) {
+          // 移动端使用 mailto
+          window.location.href = `mailto:${contact.value}`;
+        } else {
+          // PC 端打开邮件客户端
+          window.open(`mailto:${contact.value}`, '_blank');
+        }
+      } else if (contact.title === '微信') {
+        copyToClipboard(contact.value);
+        alert('微信号已复制，请在微信中搜索添加');
+      }
+    };
+
+    // 发送邮件
+    const sendEmail = async () => {
+      const { name, email, subject, message } = emailModal.value;
+
+      if (!name || !email || !subject || !message) {
+        emailModal.value.tip = '请填写完整信息';
+        return;
+      }
+
+      emailModal.value.loading = true;
+      emailModal.value.tip = '';
+
+      try {
+        // 使用 Formspree 服务发送邮件
+        // 你需要在 https://formspree.io 注册并获取 endpoint
+        // 这里使用 mailto 作为备选方案
+        const mailtoLink = `mailto:zonghui1006@163.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
+          `发件人: ${name}\n邮箱: ${email}\n\n${message}`
+        )}`;
+
+        // 尝试打开邮件客户端
+        window.location.href = mailtoLink;
+
+        // 提示用户
+        emailModal.value.tip = '已打开邮件客户端，请检查并发送邮件';
+
+        // 清空表单
+        setTimeout(() => {
+          emailModal.value.name = '';
+          emailModal.value.email = '';
+          emailModal.value.subject = '';
+          emailModal.value.message = '';
+        }, 1000);
+
+      } catch (error) {
+        emailModal.value.tip = '发送失败，请直接复制邮箱发送';
+      } finally {
+        emailModal.value.loading = false;
+      }
     };
 
     onMounted(() => {
@@ -379,13 +534,18 @@ export default {
       typeText,
       scrolled,
       navOpen,
+      emailModal,
       navItems,
       stats,
       skillCategories,
       timeline,
       contacts,
       scrollTo,
-      showEmail
+      showEmail,
+      openEmailModal,
+      closeEmailModal,
+      handleContactClick,
+      sendEmail
     };
   }
 };
@@ -1058,6 +1218,150 @@ export default {
   font-size: 0.9rem;
 }
 
+/* 邮件模态框 */
+.email-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  backdrop-filter: blur(5px);
+}
+
+.email-modal-content {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.email-modal-header {
+  background: var(--gradient);
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.email-modal-header h3 {
+  color: white;
+  font-size: 1.3rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.3s;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.email-modal-body {
+  padding: 30px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group input:disabled {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.form-actions .btn {
+  flex: 1;
+  padding: 14px 20px;
+}
+
+.email-tips {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f0f7ff;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.email-tips p {
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+/* 联系项可点击样式 */
+.contact-item {
+  cursor: pointer;
+}
+
 /* 导航汉堡菜单 */
 .nav-toggle {
   display: none;
@@ -1368,6 +1672,52 @@ export default {
   .about-card:active,
   .timeline-content:active {
     transform: scale(0.98);
+  }
+
+  /* 邮件模态框移动端 */
+  .email-modal {
+    padding: 15px;
+  }
+
+  .email-modal-content {
+    border-radius: 15px;
+    max-height: 85vh;
+  }
+
+  .email-modal-header {
+    padding: 15px 20px;
+  }
+
+  .email-modal-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .email-modal-body {
+    padding: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .form-actions .btn {
+    width: 100%;
   }
 }
 
